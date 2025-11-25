@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Upload files to n8n webhook</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 720px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    label {
+      display: block;
+      margin: 12px 0 6px;
+    }
+    .box {
+      border: 1px solid #ddd;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+    }
+    input[type="text"], input[type="file"], textarea {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 12px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: 0;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+    .status {
+      margin-top: 12px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h2>Upload multiple files + company id → n8n webhook</h2>
+  <h3>For using this script, please enter the company_Id :-  kairosoft  </h3>
+
+  <!-- FILE UPLOAD FORM -->
+  <form id="uploadForm" class="box">
+    <label for="files">Choose files (multiple allowed)</label>
+    <input id="files" type="file" multiple />
+
+    <label for="companyId">Company Name</label>
+    <input id="companyId" type="text" placeholder="Enter company id" />
+
+    <button id="submitBtn" type="submit">Submit</button>
+    <div class="status" id="status"></div>
+  </form>
+
+  <!-- QUERY SEND FORM -->
+  <form id="queryForm" class="box">
+    <h3>Send Query</h3>
+
+    <label for="queryText">Query</label>
+    <textarea id="queryText" rows="3" placeholder="Enter query"></textarea>
+
+    <label for="queryCompanyId">Company Name</label>
+    <input id="queryCompanyId" type="text" placeholder="Enter company id" />
+
+    <button type="submit">Send Query</button>
+    <div class="status" id="queryStatus"></div>
+  </form>
+
+
+<script>
+(function(){
+
+  /* Helper */
+  function setStatus(el, text, isError){
+    el.textContent = text;
+    el.style.color = isError ? 'crimson' : 'green';
+  }
+
+  /* ===========================
+     UPLOAD WEBHOOK
+     =========================== */
+  const form = document.getElementById('uploadForm');
+  const filesInput = document.getElementById('files');
+  const companyInput = document.getElementById('companyId');
+  const status = document.getElementById('status');
+
+  const UPLOAD_WEBHOOK = 'https://js.volkai.io/webhook-test/company-knowledge-base-upload';
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const files = filesInput.files;
+    const companyId = companyInput.value.trim();
+
+    if (!files || files.length === 0) return setStatus(status, 'Please choose at least one file.', true);
+    if (!companyId) return setStatus(status, 'Please enter company id.', true);
+
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append('files[]', files[i], files[i].name);
+    }
+    formData.append('companyId', companyId);
+
+    setStatus(status, 'Uploading...');
+
+    try {
+      const resp = await fetch(UPLOAD_WEBHOOK, { method: 'POST', body: formData });
+
+      if (!resp.ok) {
+        const text = await resp.text().catch(()=>null);
+        return setStatus(status, 'Upload failed: ' + resp.status + ' ' + (text || ''), true);
+      }
+
+      let text = await resp.text().catch(()=>null);
+      setStatus(status, 'Upload successful.\n' + (text || ''), false);
+
+      filesInput.value = '';
+      companyInput.value = '';
+
+    } catch (err) {
+      setStatus(status, 'Network error: ' + (err.message || err), true);
+    }
+  });
+
+
+  /* ===========================
+     QUERY WEBHOOK
+     =========================== */
+  const queryForm = document.getElementById('queryForm');
+  const queryInput = document.getElementById('queryText');
+  const queryCompanyInput = document.getElementById('queryCompanyId');
+  const queryStatus = document.getElementById('queryStatus');
+
+  const QUERY_WEBHOOK = "https://js.volkai.io/webhook-test/send-query";
+
+  queryForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const query = queryInput.value.trim();
+    const companyId = queryCompanyInput.value.trim();
+
+    if (!query) return setStatus(queryStatus, "Please enter a query.", true);
+    if (!companyId) return setStatus(queryStatus, "Please enter company id.", true);
+
+    setStatus(queryStatus, "Sending query...");
+
+    try {
+      const resp = await fetch(QUERY_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, companyId })
+      });
+
+      const rawText = await resp.text().catch(()=>"(no response)");
+
+      if (!resp.ok) {
+        return setStatus(queryStatus, "Failed: " + resp.status + "\n" + rawText, true);
+      }
+
+      let outputText = rawText;
+
+      // Try JSON parse
+      try {
+        const parsed = JSON.parse(rawText);
+        if (parsed && typeof parsed === "object" && parsed.output) {
+          outputText = parsed.output;
+        } else {
+          outputText = JSON.stringify(parsed, null, 2);
+        }
+      } catch {
+        outputText = rawText;
+      }
+
+      // Convert \n to real newlines
+      outputText = outputText.replace(/\\n/g, "\n");
+
+      // Final formatted output
+      setStatus(
+        queryStatus,
+        "Response:\n\n" + outputText.replace(/^/gm, "  "),
+        false
+      );
+
+    } catch (err) {
+      setStatus(queryStatus, "Network error: " + (err.message || err), true);
+    }
+  });
+
+})();
+</script>
+
+</body>
+</html>
