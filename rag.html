@@ -88,7 +88,7 @@
   const companyInput = document.getElementById('companyId');
   const status = document.getElementById('status');
 
-  const UPLOAD_WEBHOOK = 'https://js.volkai.io/webhook-test/company-knowledge-base-upload';
+  const UPLOAD_WEBHOOK = 'https://js.volkai.io/webhook/company-knowledge-base-upload';
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -135,7 +135,7 @@
   const queryCompanyInput = document.getElementById('queryCompanyId');
   const queryStatus = document.getElementById('queryStatus');
 
-  const QUERY_WEBHOOK = "https://js.volkai.io/webhook-test/send-query";
+  const QUERY_WEBHOOK = "https://js.volkai.io/webhook/send-query";
 
   queryForm.addEventListener('submit', async (e) => {
     e.preventDefault();
