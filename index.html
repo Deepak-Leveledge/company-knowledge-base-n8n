@@ -74,6 +74,23 @@
 <script>
 (function(){
 
+  /* ======================================================
+     TYPEWRITER STREAMING FUNCTION
+     ====================================================== */
+  function typeWriter(element, text, speed = 20) {
+    element.textContent = "";
+    let i = 0;
+
+    function type() {
+      if (i < text.length) {
+        element.textContent += text.charAt(i);
+        i++;
+        setTimeout(type, speed);
+      }
+    }
+    type();
+  }
+
   /* Helper */
   function setStatus(el, text, isError){
     el.textContent = text;
@@ -163,7 +180,6 @@
 
       let outputText = rawText;
 
-      // Try JSON parse
       try {
         const parsed = JSON.parse(rawText);
         if (parsed && typeof parsed === "object" && parsed.output) {
@@ -175,15 +191,11 @@
         outputText = rawText;
       }
 
-      // Convert \n to real newlines
       outputText = outputText.replace(/\\n/g, "\n");
 
-      // Final formatted output
-      setStatus(
-        queryStatus,
-        "Response:\n\n" + outputText.replace(/^/gm, "  "),
-        false
-      );
+      // STREAMING TYPEWRITER EFFECT
+      queryStatus.style.color = "black";
+      typeWriter(queryStatus, "Response:\n\n" + outputText, 15);
 
     } catch (err) {
       setStatus(queryStatus, "Network error: " + (err.message || err), true);
@@ -195,3 +207,4 @@
 
 </body>
 </html>
+
