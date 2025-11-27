@@ -4,75 +4,378 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Upload files to n8n webhook</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 720px;
-      margin: 40px auto;
-      padding: 20px;
-    }
-    label {
-      display: block;
-      margin: 12px 0 6px;
-    }
-    .box {
-      border: 1px solid #ddd;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 24px;
-    }
-    input[type="text"], input[type="file"], textarea {
-      width: 100%;
+ <style>
+    * {
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
     }
-    button {
-      margin-top: 12px;
-      padding: 10px 16px;
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #1a1a1a;
+      margin-bottom: 40px;
+      font-size: 1.75rem;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+    
+    .info-box {
+      background: white;
+      padding: 16px 20px;
       border-radius: 6px;
-      border: 0;
-      background: #2563eb;
-      color: white;
+      margin-bottom: 24px;
+      border: 1px solid #e0e0e0;
+    }
+    
+    .info-box h3 {
+      color: #333;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    
+    .info-box p {
+      color: #666;
+      font-size: 0.875rem;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 24px;
+      border: 1px solid #e0e0e0;
+    }
+    
+    .card h2 {
+      color: #1a1a1a;
+      margin-bottom: 24px;
+      font-size: 1.25rem;
+      font-weight: 600;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 12px;
+    }
+    
+    label {
+      display: block;
+      margin: 20px 0 8px;
+      color: #333;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    
+    input[type="text"], 
+    input[type="file"], 
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d0d0d0;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: border-color 0.2s ease;
+      font-family: inherit;
+    }
+    
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #333;
+    }
+    
+    input[type="file"] {
+      padding: 8px;
       cursor: pointer;
     }
+    
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    
+    button {
+      margin-top: 20px;
+      padding: 11px 24px;
+      border-radius: 4px;
+      border: none;
+      background: #1a1a1a;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s ease;
+    }
+    
+    button:hover {
+      background: #333;
+    }
+    
+    button:active {
+      background: #000;
+    }
+    
     .status {
-      margin-top: 12px;
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 4px;
       white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.6;
+      display: none;
+    }
+    
+    .status.show {
+      display: block;
+    }
+    
+    .status.success {
+      background: #f0f9f4;
+      color: #1e7e34;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status.error {
+      background: #fef5f5;
+      color: #c53030;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .status.info {
+      background: #f7f9fb;
+      color: #2c5282;
+      border: 1px solid #bee5eb;
+    }
+    
+    .files-section {
+      margin-top: 30px;
+    }
+    
+    .files-list {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .file-item {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s ease;
+    }
+    
+    .file-item:hover {
+      background: #f5f5f5;
+      border-color: #d0d0d0;
+    }
+    
+    .file-info {
+      flex: 1;
+    }
+    
+    .file-name {
+      font-weight: 500;
+      color: #1a1a1a;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+    
+    .file-meta {
+      font-size: 0.8rem;
+      color: #666;
+    }
+    
+    .delete-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.2s ease;
+      margin: 0;
+    }
+    
+    .delete-btn:hover {
+      background: #c82333;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+      font-size: 0.9rem;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal.show {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background-color: white;
+      padding: 28px;
+      border-radius: 8px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .modal-content h3 {
+      color: #1a1a1a;
+      margin-bottom: 12px;
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+    
+    .modal-content p {
+      color: #666;
+      margin-bottom: 20px;
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    
+    .modal-btn {
+      padding: 9px 20px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      margin: 0;
+    }
+    
+    .modal-btn.cancel {
+      background: #f5f5f5;
+      color: #333;
+      border: 1px solid #d0d0d0;
+    }
+    
+    .modal-btn.cancel:hover {
+      background: #e8e8e8;
+    }
+    
+    .modal-btn.confirm {
+      background: #dc3545;
+      color: white;
+    }
+    
+    .modal-btn.confirm:hover {
+      background: #c82333;
+    }
+    
+    .refresh-btn {
+      background: #28a745;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+    
+    .refresh-btn:hover {
+      background: #218838;
     }
   </style>
 </head>
 <body>
-  <h2>Upload multiple files + company id or company name </h2>
-  <h3>if you want to know about kairosoft company policy please enter the company name  :-  kairosoft and ask anything  </h3>
+  <div class="container">
+    <h1>📁 Company Rag Knowledge Base</h1>
+    
+    <div class="info-box">
+      <h3>ℹ️ Important Information</h3>
+      <p>Default Company ID: <strong>kairosoft</strong></p>
+    </div>
 
-  <!-- FILE UPLOAD FORM -->
-  <form id="uploadForm" class="box">
-    <label for="files">Choose files (multiple allowed)</label>
-    <input id="files" type="file" multiple />
+    <!-- UPLOADED FILES LIST -->
+    <div class="card files-section">
+      <h2>📋 Uploaded Files</h2>
+      <button class="refresh-btn" onclick="loadFiles()">🔄 Refresh Files</button>
+      <div id="filesContainer">
+        <div class="empty-state">Loading files...</div>
+      </div>
+    </div>
 
-    <label for="companyId">Company Name</label>
-    <input id="companyId" type="text" placeholder="Enter company id" />
+    <!-- FILE UPLOAD FORM -->
+    <div class="card">
+      <h2>📤 Upload Files</h2>
+      <form id="uploadForm">
+        <label for="files">Choose files (multiple allowed)</label>
+        <input id="files" type="file" multiple />
 
-    <button id="submitBtn" type="submit">Submit</button>
-    <div class="status" id="status"></div>
-  </form>
+        <label for="companyId">Company Name</label>
+        <input id="companyId" type="text" placeholder="Enter company id" value="kairosoft" />
 
-  <!-- QUERY SEND FORM -->
-  <form id="queryForm" class="box">
-    <h3>Send Query</h3>
+        <button type="submit">Upload Files</button>
+        <div class="status" id="status"></div>
+      </form>
+    </div>
 
-    <label for="queryText">Query</label>
-    <textarea id="queryText" rows="3" placeholder="Enter query"></textarea>
+    <!-- QUERY SEND FORM -->
+    <div class="card">
+      <h2>💬 Send Query</h2>
+      <form id="queryForm">
+        <label for="queryText">Query</label>
+        <textarea id="queryText" rows="3" placeholder="Enter your query here..."></textarea>
 
-    <label for="queryCompanyId">Company Name</label>
-    <input id="queryCompanyId" type="text" placeholder="Enter company id" />
+        <label for="queryCompanyId">Company Name</label>
+        <input id="queryCompanyId" type="text" placeholder="Enter company id" value="kairosoft" />
 
-    <button type="submit">Send Query</button>
-    <div class="status" id="queryStatus"></div>
-  </form>
+        <button type="submit">Send Query</button>
+        <div class="status" id="queryStatus"></div>
+      </form>
+    </div>
+  </div>
 
+  <!-- DELETE CONFIRMATION MODAL -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <h3>⚠️ Confirm Delete</h3>
+      <p>Are you sure you want to delete this file?</p>
+      <p><strong id="fileToDelete"></strong></p>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+        <button class="modal-btn confirm" onclick="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
 
 <script>
 (function(){
+  let fileToDeleteData = null;
 
   /* ======================================================
      TYPEWRITER STREAMING FUNCTION
@@ -92,10 +395,224 @@
   }
 
   /* Helper */
-  function setStatus(el, text, isError){
+  function setStatus(el, text, type = 'info'){
     el.textContent = text;
-    el.style.color = isError ? 'crimson' : 'green';
+    el.className = 'status show ' + type;
   }
+
+  // Store uploaded files locally
+  let uploadedFiles = [];
+
+  /* ===========================
+     LOAD FILES FROM SERVER
+     =========================== */
+  window.loadFiles = async function() {
+    const container = document.getElementById('filesContainer');
+    container.innerHTML = '<div class="empty-state">Loading files...</div>';
+
+    const companyId = document.getElementById('companyId').value.trim() || 'kairosoft';
+
+    try {
+      // Try GET request with company ID as query parameter
+      const resp = await fetch(`https://js.volkai.io/webhook/delet-file`, {
+        method: 'GET'
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Server returned ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      
+      // Assuming the response contains a files array
+      let files = [];
+      if (Array.isArray(data)) {
+        files = data;
+      } else if (data.files && Array.isArray(data.files)) {
+        files = data.files;
+      } else if (data.data && Array.isArray(data.data)) {
+        files = data.data;
+      }
+
+      // Merge with locally tracked files
+      uploadedFiles = files;
+
+      if (files.length === 0) {
+        container.innerHTML = '<div class="empty-state">No files uploaded yet</div>';
+        return;
+      }
+
+      displayFiles(files, container);
+
+    } catch (err) {
+      console.error('Error loading files:', err);
+      
+      // Fallback: show locally tracked uploaded files
+      if (uploadedFiles.length > 0) {
+        container.innerHTML = '<div class="status show info" style="margin-bottom: 16px;">⚠️ Showing locally tracked files (server connection issue)</div>';
+        displayFiles(uploadedFiles, container);
+      } else {
+        container.innerHTML = `
+          <div class="empty-state">
+            Unable to load files from server.<br>
+            <small style="color: #999; margin-top: 8px; display: block;">
+              ${err.message || 'Connection error'}<br>
+              Files uploaded in this session will appear after upload.
+            </small>
+          </div>
+        `;
+      }
+    }
+  }
+
+  function displayFiles(files, container) {
+    const filesList = document.createElement('ul');
+    filesList.className = 'files-list';
+
+    files.forEach((file, index) => {
+      const li = document.createElement('li');
+      li.className = 'file-item';
+      
+      const fileName = file.name || file.filename || file.fileName || 'Unknown file';
+      const fileSize = file.size ? formatFileSize(file.size) : '';
+      const uploadDate = file.date || file.uploadDate || file.createdAt || '';
+      const companyName = file.companyId || file.companyName || file.company || '';
+      
+      li.innerHTML = `
+        <div class="file-info">
+          <div class="file-name">${index + 1}. ${fileName}</div>
+          <div class="file-meta">
+            ${companyName ? `<span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 8px;">📁 ${companyName}</span>` : ''}
+            ${fileSize}${fileSize && uploadDate ? ' • ' : ''}${uploadDate}
+          </div>
+        </div>
+        <button class="delete-btn" onclick="showDeleteModal('${escapeHtml(fileName)}', '${file.id || file._id || index}', '${escapeHtml(companyName)}')">
+          🗑️ Delete
+        </button>
+      `;
+      
+      filesList.appendChild(li);
+    });
+
+    const existingList = container.querySelector('.files-list');
+    if (existingList) {
+      container.replaceChild(filesList, existingList);
+    } else {
+      const infoMsg = container.querySelector('.status');
+      if (infoMsg) {
+        container.insertBefore(filesList, infoMsg.nextSibling);
+      } else {
+        container.innerHTML = '';
+        container.appendChild(filesList);
+      }
+    }
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function formatFileSize(bytes) {
+    if (!bytes) return '';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let size = bytes;
+    let unitIndex = 0;
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+    return size.toFixed(1) + ' ' + units[unitIndex];
+  }
+
+  /* ===========================
+     DELETE MODAL FUNCTIONS
+     =========================== */
+  window.showDeleteModal = function(fileName, fileId, companyName) {
+    fileToDeleteData = { fileName, fileId, companyName: companyName || '' };
+    document.getElementById('fileToDelete').textContent = fileName;
+    document.getElementById('deleteModal').classList.add('show');
+  }
+
+  window.closeModal = function() {
+    document.getElementById('deleteModal').classList.remove('show');
+    fileToDeleteData = null;
+  }
+
+  window.confirmDelete = async function() {
+    if (!fileToDeleteData) return;
+
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('show');
+
+    // Get the company name that was used when uploading this file
+    const companyIdToSend = fileToDeleteData.companyName;
+    
+    if (!companyIdToSend) {
+      alert('Error: Company name not found for this file. Please refresh and try again.');
+      fileToDeleteData = null;
+      return;
+    }
+
+    const container = document.getElementById('filesContainer');
+    const tempStatus = document.createElement('div');
+    tempStatus.className = 'status show info';
+    tempStatus.textContent = `Deleting file from company: ${companyIdToSend}...`;
+    container.insertBefore(tempStatus, container.firstChild);
+
+    try {
+      const deletePayload = {
+        filename: fileToDeleteData.fileName,
+        fileId: fileToDeleteData.fileId,
+        companyId: companyIdToSend
+      };
+
+      console.log('Sending delete request with payload:', deletePayload);
+
+      const resp = await fetch('https://js.volkai.io/webhook/delet-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(deletePayload)
+      });
+
+      const result = await resp.text();
+
+      if (!resp.ok) {
+        tempStatus.className = 'status show error';
+        tempStatus.textContent = 'Delete failed: ' + result;
+        setTimeout(() => tempStatus.remove(), 5000);
+        return;
+      }
+
+      tempStatus.className = 'status show success';
+      tempStatus.textContent = `✅ File deleted successfully from company: ${companyIdToSend}!`;
+      
+      // Remove from local tracking
+      uploadedFiles = uploadedFiles.filter(f => 
+        f.name !== fileToDeleteData.fileName && f.id !== fileToDeleteData.fileId
+      );
+      
+      setTimeout(() => {
+        tempStatus.remove();
+        loadFiles();
+      }, 2000);
+
+    } catch (err) {
+      tempStatus.className = 'status show error';
+      tempStatus.textContent = 'Error: ' + (err.message || err);
+      setTimeout(() => tempStatus.remove(), 5000);
+    }
+
+    fileToDeleteData = null;
+  }
+
+  // Close modal on outside click
+  document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeModal();
+    }
+  });
 
   /* ===========================
      UPLOAD WEBHOOK
@@ -113,8 +630,8 @@
     const files = filesInput.files;
     const companyId = companyInput.value.trim();
 
-    if (!files || files.length === 0) return setStatus(status, 'Please choose at least one file.', true);
-    if (!companyId) return setStatus(status, 'Please enter company id.', true);
+    if (!files || files.length === 0) return setStatus(status, 'Please choose at least one file.', 'error');
+    if (!companyId) return setStatus(status, 'Please enter company id.', 'error');
 
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
@@ -122,27 +639,41 @@
     }
     formData.append('companyId', companyId);
 
-    setStatus(status, 'Uploading...');
+    setStatus(status, 'Uploading...', 'info');
 
     try {
       const resp = await fetch(UPLOAD_WEBHOOK, { method: 'POST', body: formData });
 
       if (!resp.ok) {
         const text = await resp.text().catch(()=>null);
-        return setStatus(status, 'Upload failed: ' + resp.status + ' ' + (text || ''), true);
+        return setStatus(status, 'Upload failed: ' + resp.status + ' ' + (text || ''), 'error');
       }
 
       let text = await resp.text().catch(()=>null);
-      setStatus(status, 'Upload successful.\n' + (text || ''), false);
+      setStatus(status, '✅ Upload successful!\n' + (text || ''), 'success');
+
+      // Add uploaded files to local tracking
+      for (let i = 0; i < files.length; i++) {
+        uploadedFiles.push({
+          name: files[i].name,
+          size: files[i].size,
+          date: new Date().toLocaleString(),
+          id: Date.now() + i,
+          companyId: companyId
+        });
+      }
 
       filesInput.value = '';
-      companyInput.value = '';
+      
+      // Update file list display
+      setTimeout(() => {
+        loadFiles();
+      }, 1500);
 
     } catch (err) {
-      setStatus(status, 'Network error: ' + (err.message || err), true);
+      setStatus(status, 'Network error: ' + (err.message || err), 'error');
     }
   });
-
 
   /* ===========================
      QUERY WEBHOOK
@@ -160,10 +691,10 @@
     const query = queryInput.value.trim();
     const companyId = queryCompanyInput.value.trim();
 
-    if (!query) return setStatus(queryStatus, "Please enter a query.", true);
-    if (!companyId) return setStatus(queryStatus, "Please enter company id.", true);
+    if (!query) return setStatus(queryStatus, "Please enter a query.", 'error');
+    if (!companyId) return setStatus(queryStatus, "Please enter company id.", 'error');
 
-    setStatus(queryStatus, "Sending query...");
+    setStatus(queryStatus, "Sending query...", 'info');
 
     try {
       const resp = await fetch(QUERY_WEBHOOK, {
@@ -175,7 +706,7 @@
       const rawText = await resp.text().catch(()=>"(no response)");
 
       if (!resp.ok) {
-        return setStatus(queryStatus, "Failed: " + resp.status + "\n" + rawText, true);
+        return setStatus(queryStatus, "Failed: " + resp.status + "\n" + rawText, 'error');
       }
 
       let outputText = rawText;
@@ -193,18 +724,19 @@
 
       outputText = outputText.replace(/\\n/g, "\n");
 
-      // STREAMING TYPEWRITER EFFECT
-      queryStatus.style.color = "black";
+      queryStatus.className = 'status show success';
       typeWriter(queryStatus, "Response:\n\n" + outputText, 15);
 
     } catch (err) {
-      setStatus(queryStatus, "Network error: " + (err.message || err), true);
+      setStatus(queryStatus, "Network error: " + (err.message || err), 'error');
     }
   });
+
+  // Load files on page load
+  loadFiles();
 
 })();
 </script>
 
 </body>
 </html>
-
